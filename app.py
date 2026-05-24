@@ -147,7 +147,7 @@ HTML = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>UBB Status</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23111'/><circle cx='7' cy='21' r='3.5' fill='%234ade80'/><circle cx='25' cy='21' r='3.5' fill='%234ade80'/><path d='M10.5 21 Q16 7 21.5 21' fill='none' stroke='%234ade80' stroke-width='2.5' stroke-linecap='round'/></svg>">
+  <link rel="icon" type="image/png" href="/static/favicon.png">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
