@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+import asyncio
 import os
 import subprocess
 from flask import Flask, jsonify
+from tapo import ApiClient
 
 app = Flask(__name__)
 
@@ -20,6 +22,10 @@ DEVICES = [
     {"name": "Near-end", "host": "192.168.4.37"},
     {"name": "Far-end",  "host": "192.168.4.38"},
 ]
+
+TAPO_USER = os.environ.get("TAPO_USER", "")
+TAPO_PASS = os.environ.get("TAPO_PASS", "")
+TAPO_HOST = os.environ.get("TAPO_HOST", "192.168.4.35")
 
 SIGNAL_WARN  = -65
 SIGNAL_ERROR = -80
@@ -100,6 +106,27 @@ def check_device(name, host):
         "lan_speed":  lan_speed,
         "firmware":   firmware,
     }
+
+
+async def _tapo_set(on: bool):
+    client = ApiClient(TAPO_USER, TAPO_PASS)
+    device = await client.p110(TAPO_HOST)
+    if on:
+        await device.on()
+    else:
+        await device.off()
+
+
+@app.route("/tapo/off", methods=["POST"])
+def tapo_off():
+    asyncio.run(_tapo_set(False))
+    return jsonify({"ok": True})
+
+
+@app.route("/tapo/on", methods=["POST"])
+def tapo_on():
+    asyncio.run(_tapo_set(True))
+    return jsonify({"ok": True})
 
 
 @app.route("/check")
@@ -201,9 +228,84 @@ HTML = """<!DOCTYPE html>
     }
     .btn:active { background: #2a2a2a; }
     .btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* Restart button */
+    .btn-restart {
+      margin-top: 10px; width: 100%;
+      padding: 9px 14px;
+      background: #1a1a1a; color: #f87171;
+      border: 1px solid #7f1d1d; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-restart:active { background: #2d0f0f; }
+
+    /* Confirm modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 50; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .modal {
+      background: #1a1a1a; border: 1px solid #333; border-radius: 20px;
+      padding: 24px; width: 100%; max-width: 360px;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .modal-body  { font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions button { flex: 1; padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-cancel  { background: #222; color: #aaa; border: 1px solid #333 !important; }
+    .btn-confirm { background: #7f1d1d; color: #fca5a5; }
+
+    /* Restart overlay */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid #2a2a2a; border-top-color: #4ade80;
+      border-radius: 50%; animation: spin 0.9s linear infinite;
+    }
+    #restart-overlay {
+      position: fixed; inset: 0; background: #111; z-index: 100;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+    }
+    .restart-title { font-size: 24px; font-weight: 700; color: #fff; }
+    .restart-stage { font-size: 14px; color: #666; }
+    .restart-stage.active { color: #4ade80; }
+    .stage-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .stage-item {
+      font-size: 13px; color: #444; display: flex; align-items: center; gap: 8px;
+    }
+    .stage-item.done  { color: #4ade80; }
+    .stage-item.active { color: #fff; }
+    .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
   </style>
 </head>
 <body>
+  <!-- Restart overlay -->
+  <div id="restart-overlay">
+    <div class="spinner"></div>
+    <div class="restart-title">Restarting</div>
+    <div class="stage-list">
+      <div class="stage-item" id="stage-powerdown"><div class="stage-dot"></div>Powering down</div>
+      <div class="stage-item" id="stage-restarting"><div class="stage-dot"></div>Restarting</div>
+      <div class="stage-item" id="stage-waiting"><div class="stage-dot"></div>Waiting for bridge</div>
+      <div class="stage-item" id="stage-success"><div class="stage-dot"></div>Success</div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirm-modal" class="modal-backdrop" style="display:none">
+    <div class="modal">
+      <div class="modal-title">Restart Near-end?</div>
+      <div class="modal-body">This will power cycle the UBB via the loft plug. The bridge will be offline for ~30 seconds.</div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+        <button class="btn-confirm" onclick="doRestart()">Restart</button>
+      </div>
+    </div>
+  </div>
+
   <h1>UBB Bridge Status</h1>
   <div id="banner" class="banner loading">
     <div class="spinner"></div>
@@ -266,7 +368,68 @@ HTML = """<!DOCTYPE html>
           </div>
         </div>
         ${d.problems.length ? `<div class="banner-problems" style="margin-top:8px">${d.problems.map(p => `<div class="banner-problem">${p}</div>`).join('')}</div>` : ''}
+      ${d.name === 'Near-end' ? '<button class="btn-restart" onclick="confirmRestart()">Restart</button>' : ''}
       </div>`;
+    }
+
+    function confirmRestart() {
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function closeConfirm() {
+      document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    function setStage(id) {
+      const ids = ['stage-powerdown', 'stage-restarting', 'stage-waiting', 'stage-success'];
+      const idx = ids.indexOf(id);
+      ids.forEach((s, i) => {
+        const el = document.getElementById(s);
+        el.className = 'stage-item' + (i < idx ? ' done' : i === idx ? ' active' : '');
+      });
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function waitForNearEnd() {
+      for (let i = 0; i < 40; i++) {
+        await sleep(3000);
+        try {
+          const res = await fetch('/check');
+          const data = await res.json();
+          const near = data.devices.find(d => d.name === 'Near-end');
+          if (near && near.reachable) return;
+        } catch (_) {}
+      }
+      throw new Error('Timed out');
+    }
+
+    async function doRestart() {
+      closeConfirm();
+
+      const overlay = document.getElementById('restart-overlay');
+      overlay.style.display = 'flex';
+
+      try {
+        setStage('stage-powerdown');
+        await fetch('/tapo/off', { method: 'POST' });
+
+        setStage('stage-restarting');
+        await sleep(5000);
+        await fetch('/tapo/on', { method: 'POST' });
+
+        setStage('stage-waiting');
+        await waitForNearEnd();
+
+        setStage('stage-success');
+        await sleep(1500);
+      } catch (e) {
+        document.getElementById('stage-waiting').textContent = 'Error: ' + e.message;
+        await sleep(3000);
+      }
+
+      overlay.style.display = 'none';
+      runCheck();
     }
 
     async function runCheck() {
