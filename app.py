@@ -2,7 +2,7 @@
 import asyncio
 import os
 import subprocess
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from tapo import ApiClient
 
 app = Flask(__name__)
@@ -34,7 +34,7 @@ SIGNAL_ERROR = -80
 def check_device(name, host):
     try:
         r = subprocess.run(
-            ["ssh", *SSH_OPTS, f"{SSH_USER}@{host}", "mca-status"],
+            ["ssh", *SSH_OPTS, f"{SSH_USER}@{host}", "mca-status; echo '__LED__'; cat /proc/ubnt_ledbar/color 2>/dev/null || true"],
             capture_output=True, text=True, timeout=10,
         )
     except subprocess.TimeoutExpired:
@@ -43,9 +43,22 @@ def check_device(name, host):
     if r.returncode != 0:
         return {"name": name, "host": host, "reachable": False, "error": "SSH failed"}
 
+    # Split mca-status output from LED color
+    parts = r.stdout.split("__LED__")
+    mca_out = parts[0]
+    led_raw = parts[1].strip() if len(parts) > 1 else ""
+
+    led_color = None
+    if led_raw:
+        try:
+            rv, gv, bv = [int(x) for x in led_raw.split(",")]
+            led_color = f"#{rv:02x}{gv:02x}{bv:02x}"
+        except (ValueError, TypeError):
+            pass
+
     # Parse key=value (first line may have comma-separated device info)
     data = {}
-    for line in r.stdout.strip().splitlines():
+    for line in mca_out.strip().splitlines():
         for part in line.split(","):
             if "=" in part:
                 k, _, v = part.partition("=")
@@ -105,7 +118,30 @@ def check_device(name, host):
         "mem_pct":    round(100 * (1 - mem_free / mem_total)) if mem_total else None,
         "lan_speed":  lan_speed,
         "firmware":   firmware,
+        "led_color":  led_color,
     }
+
+
+@app.route("/led", methods=["POST"])
+def set_led():
+    body = request.json or {}
+    host = body.get("host", "")
+    color = body.get("color", "").lstrip("#")
+
+    valid_hosts = {d["host"] for d in DEVICES}
+    if host not in valid_hosts or len(color) != 6:
+        return jsonify({"ok": False, "error": "invalid params"}), 400
+
+    try:
+        rv, gv, bv = int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
+    except ValueError:
+        return jsonify({"ok": False, "error": "invalid color"}), 400
+
+    r = subprocess.run(
+        ["ssh", *SSH_OPTS, f"{SSH_USER}@{host}", f"echo '{rv},{gv},{bv}' > /proc/ubnt_ledbar/color"],
+        capture_output=True, text=True, timeout=10,
+    )
+    return jsonify({"ok": r.returncode == 0})
 
 
 async def _tapo_set(on: bool):
@@ -228,6 +264,18 @@ HTML = """<!DOCTYPE html>
     }
     .btn:active { background: #2a2a2a; }
     .btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* LED swatch */
+    .led-swatch {
+      position: relative; width: 22px; height: 22px;
+      border-radius: 50%; cursor: pointer; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.15);
+      display: inline-flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .led-swatch input[type=color] {
+      position: absolute; width: 200%; height: 200%; opacity: 0; cursor: pointer;
+    }
 
     /* Restart button */
     .btn-restart {
@@ -352,10 +400,15 @@ HTML = """<!DOCTYPE html>
       const tx = d.tx_rate != null ? d.tx_rate : '—';
       const rx = d.rx_rate != null ? d.rx_rate : '—';
       const speed = (d.tx_rate != null || d.rx_rate != null) ? `▲${tx} ▼${rx} Mbps` : '—';
+      const swatch = d.led_color
+        ? `<label class="led-swatch" style="background:${d.led_color}" title="Set LED colour">
+             <input type="color" value="${d.led_color}" onchange="setLed('${d.host}', this)">
+           </label>`
+        : '';
       return `<div class="device">
         <div class="device-header">
           <div class="device-name">${d.name} <span class="device-ip">${d.host}</span></div>
-          ${badge}
+          <div style="display:flex;align-items:center;gap:8px">${swatch}${badge}</div>
         </div>
         <div class="stats">
           <div class="stat" style="flex:1">
@@ -370,6 +423,15 @@ HTML = """<!DOCTYPE html>
         ${d.problems.length ? `<div class="banner-problems" style="margin-top:8px">${d.problems.map(p => `<div class="banner-problem">${p}</div>`).join('')}</div>` : ''}
       ${d.name === 'Near-end' ? '<button class="btn-restart" onclick="confirmRestart()">Restart</button>' : ''}
       </div>`;
+    }
+
+    async function setLed(host, input) {
+      input.closest('.led-swatch').style.background = input.value;
+      await fetch('/led', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({host, color: input.value}),
+      });
     }
 
     function confirmRestart() {
