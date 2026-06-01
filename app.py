@@ -195,88 +195,82 @@ HTML = """<!DOCTYPE html>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #111;
+      background: #111; color: #fff;
       min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column; align-items: center;
       justify-content: flex-start;
       padding: 16px 16px 24px;
-      color: #fff;
     }
-    h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-         color: #888; margin-bottom: 16px; }
+    h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+         text-transform: uppercase; color: #555; margin-bottom: 12px; }
 
-    /* Status banner */
-    .banner {
-      width: 100%; max-width: 420px;
-      border-radius: 20px;
-      padding: 18px 20px;
-      text-align: center;
+    /* Status chip */
+    .chip {
+      font-size: 12px; font-weight: 700; padding: 4px 14px;
+      border-radius: 20px; margin-bottom: 20px; letter-spacing: 0.05em;
+    }
+    .chip.loading { background: #1e1e1e; color: #555; }
+    .chip.ok      { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .chip.error   { background: #2d0f0f; color: #f87171; border: 1px solid #7f1d1d; }
+
+    /* Bridge grid: near | link | far */
+    .bridge {
+      width: 100%; max-width: 440px;
+      display: grid;
+      grid-template-columns: 1fr 80px 1fr;
+      column-gap: 8px;
+      row-gap: 16px;
       margin-bottom: 20px;
-      transition: background 0.3s;
     }
-    .banner.loading { background: #1e1e1e; }
-    .banner.ok      { background: #052e16; border: 1px solid #166534; }
-    .banner.error   { background: #2d0f0f; border: 1px solid #7f1d1d; }
 
-.banner-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-    .banner-sub { font-size: 14px; color: #aaa; }
-    .banner-problems { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
-    .banner-problem { font-size: 13px; color: #fca5a5; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 7px 10px; }
-    .ok .banner-title  { color: #4ade80; }
-    .ok .banner-sub    { color: #86efac; }
-    .error .banner-title { color: #f87171; }
-    .error .banner-sub   { color: #fca5a5; }
-
-    /* Problems */
-    .problems { width: 100%; max-width: 420px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
-    .problem { background: #3f1515; border: 1px solid #7f1d1d; border-radius: 12px;
-               padding: 12px 14px; font-size: 14px; color: #fca5a5; }
-
-    /* Device cards */
-    .devices { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-    .device { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 14px 16px; }
-    .device-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .device-name { font-weight: 700; font-size: 15px; display: flex; align-items: baseline; gap: 7px; }
-    .device-ip { font-size: 11px; color: #555; font-family: monospace; font-weight: 400; }
-    .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.04em; }
-    .badge.ok    { background: #052e16; color: #4ade80; border: 1px solid #166534; }
-    .badge.error { background: #3f1515; color: #f87171; border: 1px solid #7f1d1d; }
-    .badge.unreachable { background: #1c1c1c; color: #888; border: 1px solid #333; }
-
-    .stats { display: flex; flex-direction: row; gap: 6px; }
-    .stat { flex: 1; background: #111; border-radius: 10px; padding: 8px 10px; min-width: 0; }
-    .stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
-    .stat-value { font-size: 13px; font-weight: 600; color: #e5e5e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .stat-value.good { color: #4ade80; }
-    .stat-value.warn { color: #fbbf24; }
-    .stat-value.bad  { color: #f87171; }
-    .stat-value.dim  { color: #888; }
-
-    .error-msg { color: #f87171; font-size: 14px; margin-top: 8px; }
-
-    /* Button */
-    .btn {
-      width: 100%; max-width: 420px;
-      padding: 16px;
-      background: #222;
-      color: #fff;
-      border: 1px solid #333;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+    /* Node top: circle + label */
+    .node-head { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+    .node-circle {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: #ddd;
+      border: 3px solid #333;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.3s;
+      flex-shrink: 0;
     }
-    .btn:active { background: #2a2a2a; }
-    .btn:disabled { opacity: 0.4; cursor: default; }
+    .node-circle.ok      { border-color: #4ade80; }
+    .node-circle.error   { border-color: #f87171; }
+    .node-circle.offline { border-color: #444; background: #222; }
+    .node-label { font-size: 11px; font-weight: 700; color: #555;
+                  text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* Link centre: speeds + SNR */
+    .link-head {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .speed-row { display: flex; align-items: baseline; gap: 3px; line-height: 1; }
+    .speed-dir  { font-size: 11px; color: #444; }
+    .speed-num  { font-size: 15px; font-weight: 700; color: #e5e5e5; }
+    .speed-unit { font-size: 10px; color: #555; }
+    .link-snr   { font-size: 11px; color: #555; margin-top: 2px; }
+
+    /* Node detail rows */
+    .node-detail {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .drow { font-size: 12px; color: #666; display: flex; align-items: center; gap: 5px; }
+    .dval { font-weight: 600; color: #ccc; }
+    .dval.good { color: #4ade80; }
+    .dval.warn { color: #fbbf24; }
+    .dval.bad  { color: #f87171; }
+    .dval.mono { font-family: monospace; font-size: 11px; letter-spacing: -0.02em; }
+
+    .d-problems { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+    .d-problem  { font-size: 11px; color: #fca5a5;
+                  background: rgba(127,29,29,0.3); border-radius: 6px;
+                  padding: 4px 8px; text-align: center; }
 
     /* LED swatch */
     .led-swatch {
-      position: relative; width: 22px; height: 22px;
-      border-radius: 50%; cursor: pointer; flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,0.15);
+      position: relative; width: 20px; height: 20px; border-radius: 50%;
+      cursor: pointer; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.12);
       display: inline-flex; align-items: center; justify-content: center;
       overflow: hidden;
     }
@@ -286,20 +280,29 @@ HTML = """<!DOCTYPE html>
 
     /* Restart button */
     .btn-restart {
-      margin-top: 10px; width: 100%;
-      padding: 9px 14px;
+      width: 100%; padding: 7px 8px;
       background: #1a1a1a; color: #f87171;
-      border: 1px solid #7f1d1d; border-radius: 10px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: 1px solid #7f1d1d; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
       transition: background 0.15s;
     }
     .btn-restart:active { background: #2d0f0f; }
 
+    /* Check button */
+    .btn {
+      width: 100%; max-width: 440px; padding: 16px;
+      background: #222; color: #fff;
+      border: 1px solid #333; border-radius: 14px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:active   { background: #2a2a2a; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+
     /* Confirm modal */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      z-index: 50; display: flex; align-items: center; justify-content: center;
-      padding: 24px;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
     }
     .modal {
       background: #1a1a1a; border: 1px solid #333; border-radius: 20px;
@@ -308,35 +311,33 @@ HTML = """<!DOCTYPE html>
     .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
     .modal-body  { font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5; }
     .modal-actions { display: flex; gap: 10px; }
-    .modal-actions button { flex: 1; padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
+    .modal-actions button { flex: 1; padding: 12px; border-radius: 12px;
+                            font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
     .btn-cancel  { background: #222; color: #aaa; border: 1px solid #333 !important; }
     .btn-confirm { background: #7f1d1d; color: #fca5a5; }
 
     /* Restart overlay */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
-      width: 48px; height: 48px;
+      width: 48px; height: 48px; border-radius: 50%;
       border: 3px solid #2a2a2a; border-top-color: #4ade80;
-      border-radius: 50%; animation: spin 0.9s linear infinite;
+      animation: spin 0.9s linear infinite;
     }
     #restart-overlay {
       position: fixed; inset: 0; background: #111; z-index: 100;
       display: none; flex-direction: column;
       align-items: center; justify-content: center; gap: 20px;
     }
-    .restart-title { font-size: 24px; font-weight: 700; color: #fff; }
-    .restart-stage { font-size: 14px; color: #666; }
-    .restart-stage.active { color: #4ade80; }
-    .stage-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .stage-item {
-      font-size: 13px; color: #444; display: flex; align-items: center; gap: 8px;
-    }
-    .stage-item.done  { color: #4ade80; }
+    .restart-title { font-size: 24px; font-weight: 700; }
+    .stage-list  { display: flex; flex-direction: column; gap: 8px; }
+    .stage-item  { font-size: 13px; color: #444; display: flex; align-items: center; gap: 8px; }
+    .stage-item.done   { color: #4ade80; }
     .stage-item.active { color: #fff; }
     .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
   </style>
 </head>
 <body>
+
   <!-- Restart overlay -->
   <div id="restart-overlay">
     <div class="spinner"></div>
@@ -362,74 +363,83 @@ HTML = """<!DOCTYPE html>
   </div>
 
   <h1>UBB Bridge Status</h1>
-  <div id="banner" class="banner loading">
-    <div class="spinner"></div>
-    <div class="banner-title">Checking…</div>
-    <div class="banner-sub">Connecting to both bridges</div>
-  </div>
-  <div id="problems" class="problems" style="display:none"></div>
-  <div id="devices" class="devices" style="display:none"></div>
+  <div id="chip" class="chip loading">Checking…</div>
+  <div id="bridge" class="bridge" style="display:none"></div>
   <button class="btn" id="btn" onclick="runCheck()">Check again</button>
 
   <script>
-    function fmt(val, unit) {
-      return val != null ? `${val}${unit}` : '—';
+    const TOWER = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="19.5" r="2" fill="#888"/>
+      <path d="M9 16a4.5 4.5 0 0 1 6 0" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+      <path d="M5.5 12a9.5 9.5 0 0 1 13 0" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+
+    function sc(s) {
+      if (s == null) return '';
+      return s >= -65 ? 'good' : s >= -80 ? 'warn' : 'bad';
     }
 
-    function signalClass(s) {
-      if (s == null) return 'dim';
-      if (s >= -65) return 'good';
-      if (s >= -80) return 'warn';
-      return 'bad';
+    function nodeHeadHTML(d) {
+      const cls = !d ? 'offline' : !d.reachable ? 'offline' : d.ok ? 'ok' : 'error';
+      const label = d ? d.name.replace('-end', '') : '?';
+      return `<div class="node-head">
+        <div class="node-circle ${cls}">${TOWER}</div>
+        <div class="node-label">${label}</div>
+      </div>`;
     }
 
-    function formatUptime(s) {
-      if (s == null) return '—';
-      s = Math.round(s);
-      const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-      if (d > 0) return `${d}d ${h}h`;
-      if (h > 0) return `${h}h ${m}m`;
-      return `${m}m`;
+    function linkHTML(near, far) {
+      const toFar  = near?.tx_rate  ?? far?.rx_rate  ?? null;
+      const toNear = near?.rx_rate  ?? far?.tx_rate  ?? null;
+      const snr    = near?.snr      ?? far?.snr      ?? null;
+      const f = v => v != null ? v : '—';
+      return `<div class="link-head">
+        <div class="speed-row">
+          <span class="speed-dir">→</span>
+          <span class="speed-num">${f(toFar)}</span>
+          <span class="speed-unit">Mbps</span>
+        </div>
+        <div class="speed-row">
+          <span class="speed-dir">←</span>
+          <span class="speed-num">${f(toNear)}</span>
+          <span class="speed-unit">Mbps</span>
+        </div>
+        ${snr != null ? `<div class="link-snr">SNR ${snr.toFixed(0)} dB</div>` : ''}
+      </div>`;
     }
 
-    function deviceHTML(d) {
-      if (!d.reachable) {
-        return `<div class="device">
-          <div class="device-header">
-            <div class="device-name">${d.name}</div>
-            <span class="badge unreachable">OFFLINE</span>
-          </div>
-          <div class="error-msg">${d.error}</div>
+    function nodeDetailHTML(d, isNear) {
+      if (!d || !d.reachable) {
+        return `<div class="node-detail">
+          <div class="drow" style="color:#f87171">${d ? d.error : 'No data'}</div>
         </div>`;
       }
-      const sc = signalClass(d.signal);
-      const badge = d.ok ? '<span class="badge ok">OK</span>' : '<span class="badge error">ISSUE</span>';
-      const tx = d.tx_rate != null ? d.tx_rate : '—';
-      const rx = d.rx_rate != null ? d.rx_rate : '—';
-      const speed = (d.tx_rate != null || d.rx_rate != null) ? `▲${tx} ▼${rx} Mbps` : '—';
       const swatch = d.led_color
-        ? `<label class="led-swatch" style="background:${d.led_color}" title="Set LED colour">
-             <input type="color" value="${d.led_color}" onchange="setLed('${d.host}', this)">
+        ? `<label class="led-swatch" style="background:${d.led_color}">
+             <input type="color" value="${d.led_color}" onchange="setLed('${d.host}',this)">
            </label>`
         : '';
-      return `<div class="device">
-        <div class="device-header">
-          <div class="device-name">${d.name} <span class="device-ip">${d.host}</span></div>
-          <div style="display:flex;align-items:center;gap:8px">${swatch}${badge}</div>
-        </div>
-        <div class="stats">
-          <div class="stat" style="flex:1">
-            <div class="stat-label">Signal</div>
-            <div class="stat-value ${sc}">${d.signal != null ? d.signal + ' dBm' : '—'}</div>
-          </div>
-          <div class="stat" style="flex:2">
-            <div class="stat-label">Speed</div>
-            <div class="stat-value">${speed}</div>
-          </div>
-        </div>
-        ${d.problems.length ? `<div class="banner-problems" style="margin-top:8px">${d.problems.map(p => `<div class="banner-problem">${p}</div>`).join('')}</div>` : ''}
-      ${d.name === 'Near-end' ? '<button class="btn-restart" onclick="confirmRestart()">Restart</button>' : ''}
+      const problems = d.problems?.length
+        ? `<div class="d-problems">${d.problems.map(p=>`<div class="d-problem">${p}</div>`).join('')}</div>`
+        : '';
+      const restart = isNear && d.problems?.length
+        ? `<button class="btn-restart" onclick="confirmRestart()">Restart</button>`
+        : '';
+      return `<div class="node-detail">
+        <div class="drow"><span class="dval mono">${d.host}</span></div>
+        ${d.signal != null ? `<div class="drow"><span class="dval ${sc(d.signal)}">${d.signal} dBm</span></div>` : ''}
+        ${d.cpu    != null ? `<div class="drow">CPU <span class="dval">${d.cpu.toFixed(0)}%</span></div>` : ''}
+        ${swatch   ? `<div class="drow">${swatch}</div>` : ''}
+        ${problems}
+        ${restart}
       </div>`;
+    }
+
+    function renderBridge(data) {
+      const near = data.devices.find(d => d.name === 'Near-end');
+      const far  = data.devices.find(d => d.name === 'Far-end');
+      return nodeHeadHTML(near) + linkHTML(near, far) + nodeHeadHTML(far)
+           + nodeDetailHTML(near, true) + '<div></div>' + nodeDetailHTML(far, false);
     }
 
     async function setLed(host, input) {
@@ -441,33 +451,24 @@ HTML = """<!DOCTYPE html>
       });
     }
 
-    function confirmRestart() {
-      document.getElementById('confirm-modal').style.display = 'flex';
-    }
-
-    function closeConfirm() {
-      document.getElementById('confirm-modal').style.display = 'none';
-    }
+    function confirmRestart() { document.getElementById('confirm-modal').style.display = 'flex'; }
+    function closeConfirm()   { document.getElementById('confirm-modal').style.display = 'none'; }
 
     function setStage(id) {
-      const ids = ['stage-powerdown', 'stage-restarting', 'stage-waiting', 'stage-success'];
-      const idx = ids.indexOf(id);
-      ids.forEach((s, i) => {
-        const el = document.getElementById(s);
-        el.className = 'stage-item' + (i < idx ? ' done' : i === idx ? ' active' : '');
+      ['stage-powerdown','stage-restarting','stage-waiting','stage-success'].forEach((s,i,arr) => {
+        const idx = arr.indexOf(id);
+        document.getElementById(s).className = 'stage-item' + (i < idx ? ' done' : i === idx ? ' active' : '');
       });
     }
 
-    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     async function waitForNearEnd() {
       for (let i = 0; i < 40; i++) {
         await sleep(3000);
         try {
-          const res = await fetch('/check');
-          const data = await res.json();
-          const near = data.devices.find(d => d.name === 'Near-end');
-          if (near && near.reachable) return;
+          const d = await fetch('/check').then(r => r.json());
+          if (d.devices.find(x => x.name === 'Near-end')?.reachable) return;
         } catch (_) {}
       }
       throw new Error('Timed out');
@@ -475,66 +476,37 @@ HTML = """<!DOCTYPE html>
 
     async function doRestart() {
       closeConfirm();
-
-      const overlay = document.getElementById('restart-overlay');
-      overlay.style.display = 'flex';
-
+      document.getElementById('restart-overlay').style.display = 'flex';
       try {
-        setStage('stage-powerdown');
-        await fetch('/tapo/off', { method: 'POST' });
-
-        setStage('stage-restarting');
-        await sleep(5000);
-        await fetch('/tapo/on', { method: 'POST' });
-
-        setStage('stage-waiting');
-        await waitForNearEnd();
-
-        setStage('stage-success');
-        await sleep(1500);
-      } catch (e) {
+        setStage('stage-powerdown');  await fetch('/tapo/off', {method:'POST'});
+        setStage('stage-restarting'); await sleep(5000); await fetch('/tapo/on', {method:'POST'});
+        setStage('stage-waiting');    await waitForNearEnd();
+        setStage('stage-success');    await sleep(1500);
+      } catch(e) {
         document.getElementById('stage-waiting').textContent = 'Error: ' + e.message;
         await sleep(3000);
       }
-
-      overlay.style.display = 'none';
+      document.getElementById('restart-overlay').style.display = 'none';
       runCheck();
     }
 
     async function runCheck() {
-      const banner   = document.getElementById('banner');
-      const problems = document.getElementById('problems');
-      const devices  = document.getElementById('devices');
-      const btn      = document.getElementById('btn');
-
+      const chip = document.getElementById('chip');
+      const bridge = document.getElementById('bridge');
+      const btn = document.getElementById('btn');
       btn.disabled = true;
-      banner.className = 'banner loading';
-      banner.innerHTML = '<div class="banner-title">Checking…</div>';
-      problems.style.display = 'none';
-      devices.style.display  = 'none';
-
+      chip.className = 'chip loading'; chip.textContent = 'Checking…';
+      bridge.style.display = 'none';
       try {
-        const res  = await fetch('/check');
-        const data = await res.json();
-
-        if (data.ok) {
-          banner.className = 'banner ok';
-          banner.innerHTML = '<div class="banner-title">All Good</div><div class="banner-sub">Both bridges operational</div>';
-        } else {
-          banner.className = 'banner error';
-          banner.innerHTML = '<div class="banner-title">Problem Detected</div>';
-        }
-
-        problems.style.display = 'none';
-
-        devices.innerHTML = data.devices.map(deviceHTML).join('');
-        devices.style.display = 'flex';
-
-      } catch (e) {
-        banner.className = 'banner error';
-        banner.innerHTML = '<div class="banner-icon">!</div><div class="banner-title">Error</div><div class="banner-sub">Could not reach the status service</div>';
+        const data = await fetch('/check').then(r => r.json());
+        chip.className = 'chip ' + (data.ok ? 'ok' : 'error');
+        chip.textContent = data.ok ? 'All Good'
+          : data.problems.length + ' issue' + (data.problems.length !== 1 ? 's' : '');
+        bridge.innerHTML = renderBridge(data);
+        bridge.style.display = 'grid';
+      } catch(e) {
+        chip.className = 'chip error'; chip.textContent = 'Could not reach status service';
       }
-
       btn.disabled = false;
     }
 
