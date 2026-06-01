@@ -226,16 +226,19 @@ HTML = """<!DOCTYPE html>
     /* Node top: circle + label */
     .node-head { display: flex; flex-direction: column; align-items: center; gap: 7px; }
     .node-circle {
-      width: 54px; height: 54px; border-radius: 50%;
-      background: #ddd;
-      border: 3px solid #333;
+      width: 66px; height: 66px; border-radius: 50%;
+      background: #1c1c1c;
+      border: 4px solid #333;
       display: flex; align-items: center; justify-content: center;
       transition: border-color 0.3s;
       flex-shrink: 0;
+      position: relative; overflow: hidden;
     }
-    .node-circle.ok      { border-color: #4ade80; }
-    .node-circle.error   { border-color: #f87171; }
-    .node-circle.offline { border-color: #444; background: #222; }
+    label.node-circle { cursor: pointer; }
+    .node-circle.offline { border-color: #333; }
+    .node-circle input[type=color] {
+      position: absolute; width: 200%; height: 200%; opacity: 0; cursor: pointer;
+    }
     .node-label { font-size: 11px; font-weight: 700; color: #555;
                   text-transform: uppercase; letter-spacing: 0.07em; }
 
@@ -265,18 +268,6 @@ HTML = """<!DOCTYPE html>
     .d-problem  { font-size: 11px; color: #fca5a5;
                   background: rgba(127,29,29,0.3); border-radius: 6px;
                   padding: 4px 8px; text-align: center; }
-
-    /* LED swatch */
-    .led-swatch {
-      position: relative; width: 20px; height: 20px; border-radius: 50%;
-      cursor: pointer; flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,0.12);
-      display: inline-flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .led-swatch input[type=color] {
-      position: absolute; width: 200%; height: 200%; opacity: 0; cursor: pointer;
-    }
 
     /* Restart button */
     .btn-restart {
@@ -368,11 +359,9 @@ HTML = """<!DOCTYPE html>
   <button class="btn" id="btn" onclick="runCheck()">Check again</button>
 
   <script>
-    const TOWER = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="19.5" r="2" fill="#888"/>
-      <path d="M9 16a4.5 4.5 0 0 1 6 0" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-      <path d="M5.5 12a9.5 9.5 0 0 1 13 0" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-    </svg>`;
+    const TICK    = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const CROSS   = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+    const OFFLINE = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M8 12h8" stroke="#444" stroke-width="2.5" stroke-linecap="round"/></svg>`;
 
     function sc(s) {
       if (s == null) return '';
@@ -380,12 +369,19 @@ HTML = """<!DOCTYPE html>
     }
 
     function nodeHeadHTML(d) {
-      const cls = !d ? 'offline' : !d.reachable ? 'offline' : d.ok ? 'ok' : 'error';
       const label = d ? d.name.replace('-end', '') : '?';
-      return `<div class="node-head">
-        <div class="node-circle ${cls}">${TOWER}</div>
-        <div class="node-label">${label}</div>
-      </div>`;
+      if (!d || !d.reachable) {
+        return `<div class="node-head">
+          <div class="node-circle offline">${OFFLINE}</div>
+          <div class="node-label">${label}</div>
+        </div>`;
+      }
+      const icon  = d.ok ? TICK : CROSS;
+      const ring  = d.led_color || (d.ok ? '#4ade80' : '#f87171');
+      const circle = d.led_color
+        ? `<label class="node-circle" style="border-color:${ring}">${icon}<input type="color" value="${d.led_color}" onchange="setLed('${d.host}',this)"></label>`
+        : `<div class="node-circle" style="border-color:${ring}">${icon}</div>`;
+      return `<div class="node-head">${circle}<div class="node-label">${label}</div></div>`;
     }
 
     function linkHTML(near, far) {
@@ -414,11 +410,6 @@ HTML = """<!DOCTYPE html>
           <div class="drow" style="color:#f87171">${d ? d.error : 'No data'}</div>
         </div>`;
       }
-      const swatch = d.led_color
-        ? `<label class="led-swatch" style="background:${d.led_color}">
-             <input type="color" value="${d.led_color}" onchange="setLed('${d.host}',this)">
-           </label>`
-        : '';
       const problems = d.problems?.length
         ? `<div class="d-problems">${d.problems.map(p=>`<div class="d-problem">${p}</div>`).join('')}</div>`
         : '';
@@ -429,7 +420,6 @@ HTML = """<!DOCTYPE html>
         <div class="drow"><span class="dval mono">${d.host}</span></div>
         ${d.signal != null ? `<div class="drow"><span class="dval ${sc(d.signal)}">${d.signal} dBm</span></div>` : ''}
         ${d.cpu    != null ? `<div class="drow">CPU <span class="dval">${d.cpu.toFixed(0)}%</span></div>` : ''}
-        ${swatch   ? `<div class="drow">${swatch}</div>` : ''}
         ${problems}
         ${restart}
       </div>`;
@@ -443,7 +433,7 @@ HTML = """<!DOCTYPE html>
     }
 
     async function setLed(host, input) {
-      input.closest('.led-swatch').style.background = input.value;
+      input.closest('.node-circle').style.borderColor = input.value;
       await fetch('/led', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
