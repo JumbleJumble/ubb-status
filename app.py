@@ -228,14 +228,13 @@ HTML = """<!DOCTYPE html>
     .node-circle {
       width: 66px; height: 66px; border-radius: 50%;
       background: #ffffff;
-      border: 4px solid #333;
+      border: 1.5px solid rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
-      transition: border-color 0.3s;
+      transition: box-shadow 0.3s;
       flex-shrink: 0;
       position: relative; overflow: hidden;
     }
     label.node-circle { cursor: pointer; }
-    .node-circle.offline { border-color: #aaa; }
     .node-circle input[type=color] {
       position: absolute; width: 200%; height: 200%; opacity: 0; cursor: pointer;
     }
@@ -372,15 +371,16 @@ HTML = """<!DOCTYPE html>
       const label = d ? d.name.replace('-end', '') : '?';
       if (!d || !d.reachable) {
         return `<div class="node-head">
-          <div class="node-circle offline">${OFFLINE}</div>
+          <div class="node-circle" style="box-shadow:0 0 0 4px #666">${OFFLINE}</div>
           <div class="node-label">${label}</div>
         </div>`;
       }
       const icon  = d.ok ? TICK : CROSS;
       const ring  = d.led_color || (d.ok ? '#4ade80' : '#f87171');
+      const shadow = `box-shadow:0 0 0 4px ${ring}`;
       const circle = d.led_color
-        ? `<label class="node-circle" style="border-color:${ring}">${icon}<input type="color" value="${d.led_color}" onchange="setLed('${d.host}',this)"></label>`
-        : `<div class="node-circle" style="border-color:${ring}">${icon}</div>`;
+        ? `<label class="node-circle" style="${shadow}">${icon}<input type="color" value="${d.led_color}" onchange="setLed('${d.host}',this)"></label>`
+        : `<div class="node-circle" style="${shadow}">${icon}</div>`;
       return `<div class="node-head">${circle}<div class="node-label">${label}</div></div>`;
     }
 
@@ -433,7 +433,7 @@ HTML = """<!DOCTYPE html>
     }
 
     async function setLed(host, input) {
-      input.closest('.node-circle').style.borderColor = input.value;
+      input.closest('.node-circle').style.boxShadow = `0 0 0 4px ${input.value}`;
       await fetch('/led', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
