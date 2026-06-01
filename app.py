@@ -227,7 +227,7 @@ HTML = """<!DOCTYPE html>
     .node-head { display: flex; flex-direction: column; align-items: center; gap: 7px; }
     .node-circle {
       width: 66px; height: 66px; border-radius: 50%;
-      background: #1c1c1c;
+      background: #ffffff;
       border: 4px solid #333;
       display: flex; align-items: center; justify-content: center;
       transition: border-color 0.3s;
@@ -235,7 +235,7 @@ HTML = """<!DOCTYPE html>
       position: relative; overflow: hidden;
     }
     label.node-circle { cursor: pointer; }
-    .node-circle.offline { border-color: #333; }
+    .node-circle.offline { border-color: #aaa; }
     .node-circle input[type=color] {
       position: absolute; width: 200%; height: 200%; opacity: 0; cursor: pointer;
     }
@@ -359,9 +359,9 @@ HTML = """<!DOCTYPE html>
   <button class="btn" id="btn" onclick="runCheck()">Check again</button>
 
   <script>
-    const TICK    = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    const CROSS   = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/></svg>`;
-    const OFFLINE = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M8 12h8" stroke="#444" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+    const TICK    = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const CROSS   = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+    const OFFLINE = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M8 12h8" stroke="#aaa" stroke-width="2.5" stroke-linecap="round"/></svg>`;
 
     function sc(s) {
       if (s == null) return '';
