@@ -51,8 +51,15 @@ def check_device(name, host):
     led_color = None
     if led_raw:
         try:
-            rv, gv, bv = [int(x) for x in led_raw.split(",")]
-            led_color = f"#{rv:02x}{gv:02x}{bv:02x}"
+            # Format is "r,g,b (#rrggbb)" — grab the hex directly if present
+            import re as _re
+            m = _re.search(r'\(#([0-9a-fA-F]{6})\)', led_raw)
+            if m:
+                led_color = "#" + m.group(1)
+            else:
+                rgb_part = led_raw.split("(")[0].strip()
+                rv, gv, bv = [int(x.strip()) for x in rgb_part.split(",")]
+                led_color = f"#{rv:02x}{gv:02x}{bv:02x}"
         except (ValueError, TypeError):
             pass
 
