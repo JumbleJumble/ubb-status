@@ -34,7 +34,7 @@ SIGNAL_ERROR = -80
 def check_device(name, host):
     try:
         r = subprocess.run(
-            ["ssh", *SSH_OPTS, f"{SSH_USER}@{host}", "mca-status; echo '__LED__'; cat /proc/ubnt_ledbar/color 2>/dev/null || true"],
+            ["ssh", *SSH_OPTS, f"{SSH_USER}@{host}", "mca-status; echo '__IW__'; iw dev wlan0 station dump 2>/dev/null; echo '__LED__'; cat /proc/ubnt_ledbar/color 2>/dev/null || true"],
             capture_output=True, text=True, timeout=10,
         )
     except subprocess.TimeoutExpired:
@@ -43,10 +43,13 @@ def check_device(name, host):
     if r.returncode != 0:
         return {"name": name, "host": host, "reachable": False, "error": "SSH failed"}
 
-    # Split mca-status output from LED color
-    parts = r.stdout.split("__LED__")
+    # Split sections
+    parts = r.stdout.split("__IW__")
     mca_out = parts[0]
-    led_raw = parts[1].strip() if len(parts) > 1 else ""
+    rest = parts[1] if len(parts) > 1 else ""
+    iw_led = rest.split("__LED__")
+    iw_out  = iw_led[0]
+    led_raw = iw_led[1].strip() if len(iw_led) > 1 else ""
 
     led_color = None
     if led_raw:
@@ -77,10 +80,16 @@ def check_device(name, host):
         except (KeyError, ValueError):
             return default
 
+    # Parse 60GHz rates from `iw dev wlan0 station dump` — these are the real link rates.
+    # mca-status wlanTxRate/wlanRxRate only reflect the 5GHz fallback radio.
+    import re as _re
+    _iw_tx = _re.search(r'tx bitrate:\s+([\d.]+)\s+MBit/s', iw_out)
+    _iw_rx = _re.search(r'rx bitrate:\s+([\d.]+)\s+MBit/s', iw_out)
+
     signal      = num("signal")
     noise       = num("noise")
-    tx_rate     = num("wlanTxRate")
-    rx_rate     = num("wlanRxRate")
+    tx_rate     = round(float(_iw_tx.group(1))) if _iw_tx else num("wlanTxRate")
+    rx_rate     = round(float(_iw_rx.group(1))) if _iw_rx else num("wlanRxRate")
     uptime      = num("uptime")
     connected   = num("wlanConnections", 0)
     lan_plugged = num("lanPlugged", 1)
